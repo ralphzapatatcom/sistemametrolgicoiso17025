@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión Metrológica ISO/IEC 17025 - RRALPH RGT-3000-A</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        },
+                        industrial: {
+                            50: '#f8fafc',
+                            800: '#1e293b',
+                            850: '#172033',
+                            900: '#0f172a',
+                            950: '#080d1a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos personalizados para animaciones y elementos gráficos */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.25);
+        }
+        .glow-green {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans overflow-hidden bg-industrial-950 text-slate-200">
+
+    <!-- Top Header / Bar -->
+    <header class="h-16 bg-industrial-900 border-b border-slate-800 flex items-center justify-between px-4 lg:px-6 z-20 shrink-0">
+        <div class="flex items-center gap-3">
+            <button id="mobileMenuBtn" class="lg:hidden text-slate-400 hover:text-white p-1">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <div class="bg-gradient-to-tr from-brand-600 to-cyan-400 p-2 rounded-lg text-white shadow-md">
+                    <i data-lucide="gauge" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base lg:text-lg text-white leading-none flex items-center gap-2">
+                        METROLOGY ISO/IEC 17025
+                        <span class="text-xs bg-brand-500/20 text-brand-400 border border-brand-500/30 px-2 py-0.5 rounded-full font-mono font-normal">v2.4</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Gestión de Calibración & Trazabilidad Industrial - BD: <span class="font-mono text-cyan-400">db_metrologia_iso17025</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Indicadores rápidos de estado global -->
+        <div class="flex items-center gap-3 lg:gap-6">
+            <!-- Badge TAG del instrumento activo -->
+            <div class="hidden sm:flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60">
+                <i data-lucide="cpu" class="w-4 h-4 text-brand-400"></i>
+                <div class="text-xs">
+                    <span class="text-slate-400 block text-[10px] leading-3 uppercase font-medium">TAG Activo</span>
+                    <span class="font-mono font-bold text-white">PV-101 (RRALPH RGT-3000-A)</span>
+                </div>
+            </div>
+
+            <!-- Badge Live Simulation Control -->
+            <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span class="text-xs font-mono text-emerald-400 hidden md:inline">EN LÍNEA</span>
+                <button id="toggleSimBtn" onclick="toggleSimulation()" class="ml-1 text-xs bg-brand-600 hover:bg-brand-500 text-white px-2 py-1 rounded transition text-nowrap">
+                    Pausar Simulación
+                </button>
+            </div>
+
+            <!-- Botón Notificación / Sistema -->
+            <button onclick="resetDataToDefault()" title="Restablecer datos predeterminados" class="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Layout Principal -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="absolute lg:relative inset-y-0 left-0 w-64 bg-industrial-900 border-r border-slate-800 z-30 transition-transform duration-300 transform -translate-x-full lg:translate-x-0 flex flex-col justify-between">
+            <div class="p-4 space-y-6 overflow-y-auto">
+                
+                <div>
+                    <p class="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Panel Control</p>
+                    <nav class="space-y-1">
+                        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-white bg-brand-600/30 border border-brand-500/40 text-brand-400">
+                            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                            <span>Dashboard General</span>
+                        </button>
+                        <button onclick="switchTab('certificados')" id="nav-certificados" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:bg-slate-800/60 hover:text-slate-200">
+                            <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                            <span>Hoja Técnica & Certificación</span>
+                        </button>
+                    </nav>
+                </div>
+
+                <div>
+                    <p class="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Tablas ISO 17025 (BD)</p>
+                    <nav class="space-y-1">
+                        <button onclick="switchTab('tabla1')" id="nav-tabla1" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:bg-slate-800/60 hover:text-slate-200">
+                            <span class="flex items-center gap-2.5"><i data-lucide="tag" class="w-4 h-4 text-sky-400"></i> T1: Identificación</span>
+                            <span id="badge-t1" class="font-mono bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]">4</span>
+                        </button>
+                        <button onclick="switchTab('tabla2')" id="nav-tabla2" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:bg-slate-800/60 hover:text-slate-200">
+                            <span class="flex items-center gap-2.5"><i data-lucide="droplet" class="w-4 h-4 text-cyan-400"></i> T2: Fluido & Conexión</span>
+                            <span id="badge-t2" class="font-mono bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]">3</span>
+                        </button>
+                        <button onclick="switchTab('tabla3')" id="nav-tabla3" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:bg-slate-800/60 hover:text-slate-200">
+                            <span class="flex items-center gap-2.5"><i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i> T3: Parámetros Operación</span>
+                            <span id="badge-t3" class="font-mono bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]">3</span>
+                        </button>
+                        <button onclick="switchTab('tabla4')" id="nav-tabla4" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:bg-slate-800/60 hover:text-slate-200">
+                            <span class="flex items-center gap-2.5"><i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i> T4: Rangos Metrológicos</span>
+                            <span id="badge-t4" class="font-mono bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]">3</span>
+                        </button>
+                        <button onclick="switchTab('tabla5')" id="nav-tabla5" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:bg-slate-800/60 hover:text-slate-200">
+                            <span class="flex items-center gap-2.5"><i data-lucide="thermometer-snowflake" class="w-4 h-4 text-violet-400"></i> T5: Cond. Ambientales</span>
+                            <span id="badge-t5" class="font-mono bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]">3</span>
+                        </button>
+                        <button onclick="switchTab('tabla6')" id="nav-tabla6" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:bg-slate-800/60 hover:text-slate-200">
+                            <span class="flex items-center gap-2.5"><i data-lucide="shield-check" class="w-4 h-4 text-rose-400"></i> T6: Trazabilidad ISO</span>
+                            <span id="badge-t6" class="font-mono bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]">4</span>
+                        </button>
+                    </nav>
+                </div>
+
+                <div>
+                    <p class="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Herramientas SQL</p>
+                    <nav class="space-y-1">
+                        <button onclick="switchTab('sql')" id="nav-sql" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:bg-slate-800/60 hover:text-slate-200">
+                            <i data-lucide="database" class="w-4 h-4 text-amber-500"></i>
+                            <span>Consola SQL & Export</span>
+                        </button>
+                    </nav>
+                </div>
+
+            </div>
+
+            <!-- Footer Sidebar Info -->
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-500 bg-industrial-950/50">
+                <div class="flex justify-between items-center mb-1">
+                    <span>Motor: <strong class="text-slate-300">InnoDB</strong></span>
+                    <span>Charset: <strong class="text-slate-300">utf8mb4</strong></span>
+                </div>
+                <div class="text-[11px] text-slate-400 flex items-center gap-1">
+                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    Cumplimiento ISO/IEC 17025:2017
+                </div>
+            </div>
+        </aside>
+
+        <!-- Backdrop para móvil -->
+        <div id="sidebarBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 hidden lg:hidden"></div>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-4 lg:p-6 bg-industrial-950 relative">
+
+            <!-- Dynamic Notification Toast -->
+            <div id="toast" class="fixed top-20 right-6 z-50 transform translate-x-full transition-transform duration-300 max-w-sm glass-panel border-l-4 border-emerald-500 p-4 rounded-r-lg shadow-xl hidden">
+                <div class="flex items-start gap-3">
+                    <i id="toastIcon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                    <div>
+                        <h4 id="toastTitle" class="text-sm font-semibold text-white">Notificación</h4>
+                        <p id="toastMessage" class="text-xs text-slate-300 mt-0.5">Operación completada con éxito.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- PANTALLA 1: DASHBOARD GENERAL INTERACTIVO -->
+            <!-- ========================================== -->
+            <section id="panel-dashboard" class="tab-panel space-y-6">
+                <!-- Header Sección -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i data-lucide="gauge" class="w-6 h-6 text-brand-400"></i>
+                            Panel de Monitoreo & Diagnóstico Metrológico
+                        </h2>
+                        <p class="text-xs text-slate-400">Sistema en tiempo real para Transmisor Multivariable RRALPH RGT-3000-A</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                            Calibración Vigente (ISO 17025)
+                        </span>
+                        <button onclick="triggerSimulatedReading()" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cyan-400"></i> Forzar Lectura
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards Top -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- KPI 1: Presión Instantánea -->
+                    <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-slate-400">Presión Manométrica</p>
+                                <h3 id="dash-presion" class="text-2xl font-bold font-mono text-white mt-1">1.458 <span class="text-sm font-normal text-slate-400">bar</span></h3>
+                            </div>
+                            <div class="bg-brand-500/10 p-2 rounded-lg text-brand-400">
+                                <i data-lucide="gauge" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400">Rango (LRV - URV):</span>
+                            <span class="font-mono text-cyan-400 font-semibold">0.000 - 5.000 bar</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                            <div id="bar-presion" class="bg-gradient-to-r from-brand-500 to-cyan-400 h-full transition-all duration-500" style="width: 29.16%"></div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 2: Temperatura -->
+                    <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-amber-500/50 transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-slate-400">Temperatura de Proceso</p>
+                                <h3 id="dash-temp" class="text-2xl font-bold font-mono text-white mt-1">22.40 <span class="text-sm font-normal text-slate-400">°C</span></h3>
+                            </div>
+                            <div class="bg-amber-500/10 p-2 rounded-lg text-amber-400">
+                                <i data-lucide="thermometer" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400">Elemento RTD:</span>
+                            <span class="font-mono text-amber-300 font-semibold">Pt100 (-20 a 80 °C)</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                            <div id="bar-temp" class="bg-gradient-to-r from-amber-500 to-orange-400 h-full transition-all duration-500" style="width: 42.4%"></div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 3: Señal 4-20mA -->
+                    <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-emerald-500/50 transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-slate-400">Señal Corriente Analógica</p>
+                                <h3 id="dash-ma" class="text-2xl font-bold font-mono text-white mt-1">8.665 <span class="text-sm font-normal text-slate-400">mA</span></h3>
+                            </div>
+                            <div class="bg-emerald-500/10 p-2 rounded-lg text-emerald-400">
+                                <i data-lucide="zap" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400">Bucle Analógico:</span>
+                            <span class="font-mono text-emerald-400 font-semibold">4 - 20 mA Normal</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                            <div id="bar-ma" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500" style="width: 29.16%"></div>
+                        </div>
+                    </div>
+
+                    <!-- KPI 4: Diagnóstico Interno -->
+                    <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-sky-500/50 transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-slate-400">Diagnóstico & Tolerancia</p>
+                                <h3 class="text-lg font-bold font-mono text-emerald-400 mt-1 flex items-center gap-1.5">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                                    STATUS: OK
+                                </h3>
+                            </div>
+                            <div class="bg-sky-500/10 p-2 rounded-lg text-sky-400">
+                                <i data-lucide="activity" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-400">Error Máx (EMP):</span>
+                            <span class="font-mono text-sky-300 font-semibold">± 0.10% Span</span>
+                        </div>
+                        <div class="mt-2 text-[10px] text-slate-400 font-mono">Incertidumbre: U(k=2) = ±0.005 bar</div>
+                    </div>
+                </div>
+
+                <!-- Gráficos visuales / Medidores Simulados -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Gauge Presión Dial Visual -->
+                    <div class="glass-panel p-5 rounded-xl flex flex-col justify-between items-center relative">
+                        <div class="w-full flex justify-between items-center mb-2">
+                            <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                                <i data-lucide="disc" class="w-4 h-4 text-brand-400"></i>
+                                Manómetro Analógico de Proceso
+                            </h3>
+                            <span class="text-[10px] font-mono bg-slate-800 text-slate-300 px-2 py-0.5 rounded">GAS NATURAL</span>
+                        </div>
+
+                        <!-- Canvas Dial Gauge -->
+                        <div class="relative flex items-center justify-center my-4">
+                            <svg class="w-52 h-52 transform -rotate-90" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="50" stroke="#1e293b" stroke-width="10" fill="transparent" />
+                                <circle id="gauge-circle" cx="60" cy="60" r="50" stroke="url(#cyan-gradient)" stroke-width="10" 
+                                        fill="transparent" stroke-dasharray="314.15" stroke-dashoffset="222" stroke-linecap="round" class="transition-all duration-500"/>
+                                <defs>
+                                    <linearGradient id="cyan-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#0284c7" />
+                                        <stop offset="100%" stop-color="#38bdf8" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                <span class="text-xs text-slate-400 font-medium">Presión</span>
+                                <span id="gauge-value-text" class="text-3xl font-bold font-mono text-white">1.458</span>
+                                <span class="text-xs font-mono text-brand-400 font-semibold">bar</span>
+                            </div>
+                        </div>
+
+                        <div class="w-full grid grid-cols-3 gap-2 text-center text-xs border-t border-slate-800 pt-3">
+                            <div>
+                                <span class="text-[10px] text-slate-500 block">MIN (LRV)</span>
+                                <span class="font-mono text-slate-300 font-semibold">0.00 bar</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-500 block">ACTUAL</span>
+                                <span id="gauge-subtext" class="font-mono text-cyan-400 font-semibold">1.458 bar</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-500 block">MAX (URV)</span>
+                                <span class="font-mono text-slate-300 font-semibold">5.00 bar</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico Histórico Simulación (Canvas Dynamic) -->
+                    <div class="glass-panel p-5 rounded-xl lg:col-span-2 flex flex-col justify-between">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                                    <i data-lucide="line-chart" class="w-4 h-4 text-emerald-400"></i>
+                                    Registro de Estabilidad de Lectura (Presión vs Tiempo)
+                                </h3>
+                                <p class="text-xs text-slate-400">Monitoreo de oscilación y ruido en el bucle de proceso</p>
+                            </div>
+                            <span class="text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded font-mono">
+                                Freq: 1.5s
+                            </span>
+                        </div>
+
+                        <div class="h-48 w-full relative">
+                            <canvas id="trendChart" class="w-full h-full"></canvas>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between text-xs text-slate-400 border-t border-slate-800 pt-3 mt-2 gap-2">
+                            <div class="flex items-center gap-4">
+                                <span class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                                    Presión (bar)
+                                </span>
+                                <span class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                                    Temperatura (°C / 10)
+                                </span>
+                            </div>
+                            <span class="font-mono text-[11px] text-slate-500">Evaluación Histerética ISO 17025 en tiempo real</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Resumen de Especificación Técnica Rápida -->
+                <div class="glass-panel p-5 rounded-xl">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4 text-sky-400"></i>
+                        Resumen de Hoja de Levantamiento Metrológico
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
+                            <span class="text-slate-400 block text-[11px] font-medium uppercase mb-1">Identificación</span>
+                            <p class="text-white">TAG: <strong class="text-cyan-400 font-mono">PV-101</strong></p>
+                            <p class="text-slate-300">Modelo: RRALPH RGT-3000-A</p>
+                            <p class="text-slate-300">S/N: 12459873</p>
+                            <p class="text-slate-400 text-[11px] mt-1">Ubicación: Planta Industrial / Estación Gas</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
+                            <span class="text-slate-400 block text-[11px] font-medium uppercase mb-1">Condiciones Ensayos</span>
+                            <p class="text-white">Temp Ambiente: <strong class="text-amber-300 font-mono">20.0 °C ± 2.0 °C</strong></p>
+                            <p class="text-slate-300">Humedad: 45% a 65% RH</p>
+                            <p class="text-slate-300">Presión Atmosférica: 1013.25 hPa ± 15 hPa</p>
+                            <p class="text-slate-400 text-[11px] mt-1">Control ambiental estricto ISO 17025</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
+                            <span class="text-slate-400 block text-[11px] font-medium uppercase mb-1">Metodología & Trazabilidad</span>
+                            <p class="text-white">Patrones: Patrón neumático & Temp Acreditados</p>
+                            <p class="text-slate-300">Puntos de Prueba: 5 puntos (0%, 25%, 50%, 75%, 100%)</p>
+                            <p class="text-slate-300">Ciclo: Histerético ascendente y descendente</p>
+                            <p class="text-emerald-400 font-semibold text-[11px] mt-1">Incertidumbre k=2 (95% Confianza)</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ========================================== -->
+            <!-- PANTALLA 2: HOJA TÉCNICA Y CERTIFICADO    -->
+            <!-- ========================================== -->
+            <section id="panel-certificados" class="tab-panel space-y-6 hidden">
+                <div class="flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i data-lucide="file-check-2" class="w-6 h-6 text-emerald-400"></i>
+                            Planilla de Levantamiento & Certificado ISO 17025
+                        </h2>
+                        <p class="text-xs text-slate-400">Vista previa normada del documento de caracterización metrológica</p>
+                    </div>
+                    <button onclick="window.print()" class="bg-brand-600 hover:bg-brand-500 text-white text-xs px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Imprimir / Exportar PDF
+                    </button>
+                </div>
+
+                <!-- Documento Imprimible Simulado -->
+                <div class="bg-white text-slate-900 p-6 md:p-10 rounded-xl shadow-2xl max-w-4xl mx-auto border border-slate-300 font-sans">
+                    
+                    <!-- Header Certificado -->
+                    <div class="border-b-2 border-slate-800 pb-4 mb-6 flex justify-between items-start">
+                        <div>
+                            <h1 class="text-xl font-bold tracking-tight text-slate-900">INGENIERÍA & METROLOGÍA INDUSTRIAL</h1>
+                            <h2 class="text-sm font-semibold text-brand-700">PLANILLA DE LEVANTAMIENTO METROLÓGICO ISO/IEC 17025:2017</h2>
+                            <p class="text-xs text-slate-500 mt-1">Documento Normativo para Caracterización de Transmisores Multivariables</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block bg-slate-100 border border-slate-300 px-3 py-1 rounded font-mono font-bold text-xs text-slate-800">
+                                CÓDIGO: REG-MET-101
+                            </span>
+                            <p class="text-[10px] text-slate-500 mt-1">Acreditación ISO/IEC 17025</p>
+                        </div>
+                    </div>
+
+                    <!-- Resumen de Instrumento -->
+                    <div class="grid grid-cols-2 gap-4 mb-6 text-xs bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div>
+                            <p><strong class="text-slate-700">Instrumento:</strong> Transmisor Multivariable</p>
+                            <p><strong class="text-slate-700">TAG:</strong> PV-101</p>
+                            <p><strong class="text-slate-700">Fabricante / Modelo:</strong> RRALPH / RGT-3000-A</p>
+                            <p><strong class="text-slate-700">Número de Serie:</strong> 12459873</p>
+                        </div>
+                        <div>
+                            <p><strong class="text-slate-700">Ubicación:</strong> Planta Industrial / Estación de Gas</p>
+                            <p><strong class="text-slate-700">Fluido:</strong> Gas Natural</p>
+                            <p><strong class="text-slate-700">Señal Output:</strong> 4-20 mA (Bucle analógico)</p>
+                            <p><strong class="text-slate-700">Estado Diagnóstico:</strong> <span class="text-emerald-700 font-bold">STATUS: OK</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Tablas Resumen Certificado -->
+                    <div class="space-y-6 text-xs">
+                        
+                        <div>
+                            <h3 class="font-bold text-slate-800 border-b border-slate-300 pb-1 mb-2 uppercase text-[11px] tracking-wider">
+                                1. Rangos Metrológicos & Límites de Tolerancia
+                            </h3>
+                            <table class="w-full border-collapse border border-slate-300">
+                                <thead>
+                                    <tr class="bg-slate-100 font-semibold text-slate-700">
+                                        <th class="border border-slate-300 p-2 text-left w-12">N°</th>
+                                        <th class="border border-slate-300 p-2 text-left">Parámetro de Calibración</th>
+                                        <th class="border border-slate-300 p-2 text-left">Especificación Metrológica ISO 17025</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="border border-slate-300 p-2 font-mono">11</td>
+                                        <td class="border border-slate-300 p-2">Rango Ajustado de Presión (LRV - URV)</td>
+                                        <td class="border border-slate-300 p-2">0.000 bar a 5.000 bar (Equivalente a 4 mA - 20 mA)</td>
+                                    </tr>
+                                    <tr class="bg-slate-50">
+                                        <td class="border border-slate-300 p-2 font-mono">12</td>
+                                        <td class="border border-slate-300 p-2">Rango Elemento Temperatura</td>
+                                        <td class="border border-slate-300 p-2">-20.0 °C a 80.0 °C (Elemento RTD Pt100)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-slate-300 p-2 font-mono">13</td>
+                                        <td class="border border-slate-300 p-2">Clase Exactitud / Error Máximo (EMP)</td>
+                                        <td class="border border-slate-300 p-2 font-semibold text-slate-800">± 0.10% del Span de Medición</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-slate-800 border-b border-slate-300 pb-1 mb-2 uppercase text-[11px] tracking-wider">
+                                2. Condiciones Ambientales de Control
+                            </h3>
+                            <table class="w-full border-collapse border border-slate-300">
+                                <thead>
+                                    <tr class="bg-slate-100 font-semibold text-slate-700">
+                                        <th class="border border-slate-300 p-2 text-left w-12">N°</th>
+                                        <th class="border border-slate-300 p-2 text-left">Variable Ambiental</th>
+                                        <th class="border border-slate-300 p-2 text-left">Límite Aceptable</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="border border-slate-300 p-2 font-mono">14</td>
+                                        <td class="border border-slate-300 p-2">Temperatura Ambiente de Ensayo</td>
+                                        <td class="border border-slate-300 p-2">20.0 °C ± 2.0 °C (Compensación térmica)</td>
+                                    </tr>
+                                    <tr class="bg-slate-50">
+                                        <td class="border border-slate-300 p-2 font-mono">15</td>
+                                        <td class="border border-slate-300 p-2">Humedad Relativa Ambiente</td>
+                                        <td class="border border-slate-300 p-2">45% a 65% RH</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-slate-300 p-2 font-mono">16</td>
+                                        <td class="border border-slate-300 p-2">Presión Atmosférica Local</td>
+                                        <td class="border border-slate-300 p-2">1013.25 hPa ± 15 hPa</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-slate-800 border-b border-slate-300 pb-1 mb-2 uppercase text-[11px] tracking-wider">
+                                3. Trazabilidad & Incertidumbre
+                            </h3>
+                            <div class="border border-slate-300 p-3 rounded space-y-2 bg-slate-50 text-[11px]">
+                                <p><strong>Patrones Acreditados:</strong> Calibrador neumático patrón y termómetro de referencia bajo norma ISO 17025 con certificado vigente.</p>
+                                <p><strong>Puntos de Evaluación:</strong> Mínimo 5 puntos en ciclo histerético completo (0%, 25%, 50%, 75%, 100% del Span).</p>
+                                <p><strong>Incertidumbre Expandida (U):</strong> Presupuesto acumulado de incertidumbre calculado con nivel de confianza del 95% (Factor de cobertura k=2).</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Firmas de Responsabilidad -->
+                    <div class="grid grid-cols-2 gap-8 mt-12 pt-6 border-t border-slate-300 text-xs text-center">
+                        <div>
+                            <div class="h-12 border-b border-dashed border-slate-400 mb-2 flex items-end justify-center pb-1">
+                                <span class="font-mono text-slate-400 text-[10px]">[ FIRMA DIGITAL REGISTRADA ]</span>
+                            </div>
+                            <p class="font-bold text-slate-800">Metrólogo / Inspector Acreditado</p>
+                            <p class="text-slate-500 text-[10px]">Firma / Sello ISO 17025</p>
+                        </div>
+                        <div>
+                            <div class="h-12 border-b border-dashed border-slate-400 mb-2 flex items-end justify-center pb-1">
+                                <span class="font-mono text-slate-400 text-[10px]">[ APROBADO SISTEMA DE CALIDAD ]</span>
+                            </div>
+                            <p class="font-bold text-slate-800">Director de Calidad / Planta</p>
+                            <p class="text-slate-500 text-[10px]">Firma / Sello Aprobación</p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+
+            <!-- ========================================== -->
+            <!-- PANTALLAS CRUD: TABLAS 1 A 6              -->
+            <!-- ========================================== -->
+            
+            <!-- Plantilla genérica para renderizar Tablas SQL -->
+            <template id="table-panel-template">
+                <!-- Se llenará dinámicamente con JS -->
+            </template>
+
+            <!-- Contenedor dinámico de pantallas CRUD -->
+            <div id="crud-panels-container"></div>
+
+
+            <!-- ========================================== -->
+            <!-- PANTALLA: CONSOLA SQL Y EXPORTACIÓN       -->
+            <!-- ========================================== -->
+            <section id="panel-sql" class="tab-panel space-y-6 hidden">
+                <div class="flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i data-lucide="database" class="w-6 h-6 text-amber-500"></i>
+                            Script SQL DDL/DML & Exportación MariaDB/phpMyAdmin
+                        </h2>
+                        <p class="text-xs text-slate-400">Base de datos: <span class="font-mono text-cyan-400">db_metrologia_iso17025</span> (Motor InnoDB, utf8mb4)</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="copySQLScript()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs px-3 py-2 rounded-lg font-medium transition flex items-center gap-1.5">
+                            <i data-lucide="copy" class="w-4 h-4"></i> Copiar Código SQL
+                        </button>
+                        <button onclick="downloadSQLFile()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-3 py-2 rounded-lg font-medium border border-slate-700 transition flex items-center gap-1.5">
+                            <i data-lucide="download" class="w-4 h-4 text-brand-400"></i> Descargar .sql
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Visor de Código SQL -->
+                <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
+                    <div class="bg-slate-900 px-4 py-2.5 border-b border-slate-800 flex justify-between items-center text-xs">
+                        <span class="font-mono text-slate-400 flex items-center gap-2">
+                            <i data-lucide="file-code" class="w-4 h-4 text-amber-400"></i>
+                            db_metrologia_iso17025.sql
+                        </span>
+                        <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">Compatible con XAMPP / MariaDB</span>
+                    </div>
+                    <div class="p-4 bg-industrial-950 overflow-x-auto">
+                        <pre id="sqlCodeViewer" class="font-mono text-xs text-cyan-300 leading-relaxed whitespace-pre"></pre>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal para Agregar / Editar Registro en Tablas -->
+    <div id="crudModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-lg rounded-xl overflow-hidden shadow-2xl border border-slate-700">
+            <div class="bg-slate-800/90 px-5 py-4 border-b border-slate-700 flex justify-between items-center">
+                <h3 id="modalTitle" class="font-bold text-white text-base flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-5 h-5 text-brand-400"></i>
+                    Editar Registro
+                </h3>
+                <button onclick="closeCrudModal()" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="crudForm" onsubmit="saveRecord(event)" class="p-5 space-y-4">
+                <input type="hidden" id="formTableKey">
+                <input type="hidden" id="formRecordId">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Número de Item (N°)</label>
+                    <input type="number" id="formNumeroItem" required class="w-full bg-industrial-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div>
+                    <label id="labelCol1" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Parámetro</label>
+                    <input type="text" id="formCol1" required class="w-full bg-industrial-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div>
+                    <label id="labelCol2" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Valor / Especificación</label>
+                    <textarea id="formCol2" rows="3" required class="w-full bg-industrial-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="closeCrudModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-lg transition flex items-center gap-1.5">
+                        <i data-lucide="save" class="w-4 h-4"></i> Guardar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT LÓGICA COMPLETA -->
+    <script>
+        // ==========================================
+        // ESTADO INICIAL DE LA BASE DE DATOS (6 TABLAS)
+        // ==========================================
+        const initialDatabase = {
+            tabla1: {
+                title: "Tabla 1: Identificación del Instrumento",
+                tableNameSQL: "identificacion_instrumento",
+                col1Name: "parametro",
+                col2Name: "valor_registrado",
+                col1Label: "Parámetro",
+                col2Label: "Valor Registrado en Campo",
+                icon: "tag",
+                badgeColor: "sky",
+                data: [
+                    { id: 1, numero_item: 1, col1: "TAG del Instrumento", col2: "PV-101" },
+                    { id: 2, numero_item: 2, col1: "Fabricante y Modelo", col2: "RRALPH/RGT-3000-A" },
+                    { id: 3, numero_item: 3, col1: "Número de Serie (S/N)", col2: "12459873" },
+                    { id: 4, numero_item: 4, col1: "Ubicación Operativa", col2: "Planta Industrial / Estacion de Gas" }
+                ]
+            },
+            tabla2: {
+                title: "Tabla 2: Fluido y Conexión Mecánica",
+                tableNameSQL: "fluido_conexion_mecanica",
+                col1Name: "parametro",
+                col2Name: "especificacion",
+                col1Label: "Parámetro",
+                col2Label: "Valor / Especificación",
+                icon: "droplet",
+                badgeColor: "cyan",
+                data: [
+                    { id: 1, numero_item: 5, col1: "Fluido Manejado", col2: "GAS/Gas Natural" },
+                    { id: 2, numero_item: 6, col1: "Puerto de Conexión", col2: '1/2" NPT (Macho/Hembra)' },
+                    { id: 3, numero_item: 7, col1: "Señal de Salida", col2: "4-20 mA (Bucle analógico)" }
+                ]
+            },
+            tabla3: {
+                title: "Tabla 3: Parámetros de Operación",
+                tableNameSQL: "parametros_operacion",
+                col1Name: "parametro_operativo",
+                col2Name: "lectura_estado",
+                col1Label: "Parámetro Operativo",
+                col2Label: "Lectura Instantánea / Estado",
+                icon: "activity",
+                badgeColor: "emerald",
+                data: [
+                    { id: 1, numero_item: 8, col1: "Indicación de Presión Actual", col2: "1.458 bar (Relativa / Manométrica)" },
+                    { id: 2, numero_item: 9, col1: "Indicación de Temperatura Actual", col2: "22.4 °C" },
+                    { id: 3, numero_item: 10, col1: "Diagnóstico Interno", col2: "STATUS: OK (Sistema operativo sin fallas de sensor)" }
+                ]
+            },
+            tabla4: {
+                title: "Tabla 4: Rangos Metrológicos",
+                tableNameSQL: "rangos_metrologicos",
+                col1Name: "parametro_calibracion",
+                col2Name: "especificacion_metrologica",
+                col1Label: "Parámetro de Calibración",
+                col2Label: "Especificación Metrológica ISO 17025",
+                icon: "sliders",
+                badgeColor: "amber",
+                data: [
+                    { id: 1, numero_item: 11, col1: "Rango Ajustado de Presión (LRV URV)", col2: "0.000 bar a 5.000 bar (Equivalente a 4 mA-20 mA)" },
+                    { id: 2, numero_item: 12, col1: "Rango del Elemento de Temperatura", col2: "-20.0 °C a 80.0 °C (Elemento RTD Pt100 / Termopar integrado)" },
+                    { id: 3, numero_item: 13, col1: "Clase de Exactitud / Error Maximo (EMP)", col2: "± 0.10% del Span de Medición (Tolerancia aceptable de proceso)" }
+                ]
+            },
+            tabla5: {
+                title: "Tabla 5: Condiciones Ambientales",
+                tableNameSQL: "condiciones_ambientales",
+                col1Name: "variable_ambiental",
+                col2Name: "limite_aceptable",
+                col1Label: "Variable Ambiental",
+                col2Label: "Límite Aceptable / Control Ensayos",
+                icon: "thermometer-snowflake",
+                badgeColor: "violet",
+                data: [
+                    { id: 1, numero_item: 14, col1: "Temperatura Ambiente de Ensayo", col2: "20.0 °C ± 2.0 °C (Para compensación del coeficiente térmico)" },
+                    { id: 2, numero_item: 15, col1: "Humedad Relativa Ambiente", col2: "45% a 65% RH (Control de interferencia electrostática)" },
+                    { id: 3, numero_item: 16, col1: "Presión Atmosférica Local", col2: "1013.25 hPa ± 15 hPa (Registrado para referencia manométrica)" }
+                ]
+            },
+            tabla6: {
+                title: "Tabla 6: Trazabilidad y Metodología ISO 17025",
+                tableNameSQL: "trazabilidad_metodologia",
+                col1Name: "parametro_normativo",
+                col2Name: "requisito_aplicado",
+                col1Label: "Parámetro Normativo",
+                col2Label: "Requisito Metrológico Aplicado",
+                icon: "shield-check",
+                badgeColor: "rose",
+                data: [
+                    { id: 1, numero_item: 17, col1: "Trazabilidad de Patrones", col2: "Calibrador neumatico patron y termometro de referencia acreditados con certificado vigente bajo ISO 17025." },
+                    { id: 2, numero_item: 18, col1: "Puntos de Prueba (Ciclo Histerético)", col2: "Minimo 5 puntos en carrera ascendente y descendente (0%, 25%, 50%, 75%, 100% del Span)." },
+                    { id: 3, numero_item: 19, col1: "Histeresis y Repetibilidad", col2: "Evaluación matemática de diferencias inter-lecturas en ciclo completo de presión y temperatura." },
+                    { id: 4, numero_item: 20, col1: "Incertidumbre Expandida (U)", col2: "Presupuesto acumulado de incertidumbre calculado con nivel de confianza de 95% (Factor de cobertura k=2)." }
+                ]
+            }
+        };
+
+        // Carga de estado local en localStorage
+        let db = JSON.parse(localStorage.getItem('db_metrologia_iso17025')) || initialDatabase;
+
+        function saveDBToLocalStorage() {
+            localStorage.setItem('db_metrologia_iso17025', JSON.stringify(db));
+            updateBadges();
+            generateSQLCode();
+        }
+
+        function resetDataToDefault() {
+            if(confirm("¿Desea restablecer todas las tablas a los datos originales de la especificación ISO 17025?")) {
+                db = JSON.parse(JSON.stringify(initialDatabase));
+                saveDBToLocalStorage();
+                renderAllCrudPanels();
+                showToast("Base de Datos Restablecida", "Se cargaron los valores predeterminados de fábrica.", "rotate-ccw", "amber");
+            }
+        }
+
+        // ==========================================
+        // RENDERIZADO DE PANTALLAS CRUD DINÁMICAS
+        // ==========================================
+        function renderAllCrudPanels() {
+            const container = document.getElementById('crud-panels-container');
+            container.innerHTML = '';
+
+            Object.keys(db).forEach(tableKey => {
+                const tableInfo = db[tableKey];
+                
+                const section = document.createElement('section');
+                section.id = `panel-${tableKey}`;
+                section.className = 'tab-panel space-y-6 hidden';
+
+                section.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                                <i data-lucide="${tableInfo.icon}" class="w-6 h-6 text-${tableInfo.badgeColor}-400"></i>
+                                ${tableInfo.title}
+                            </h2>
+                            <p class="text-xs text-slate-400">Tabla SQL: <span class="font-mono text-cyan-400">${tableInfo.tableNameSQL}</span> | Gestión de registros metrológicos</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                                <input type="text" onkeyup="filterTable('${tableKey}', this.value)" placeholder="Buscar en tabla..." class="bg-slate-800 border border-slate-700 text-xs text-white pl-9 pr-3 py-2 rounded-lg focus:outline-none focus:border-brand-500 w-48 lg:w-64">
+                            </div>
+                            <button onclick="openCrudModal('${tableKey}')" class="bg-brand-600 hover:bg-brand-500 text-white text-xs px-3.5 py-2 rounded-lg font-medium transition flex items-center gap-1.5 shrink-0">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Registro
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs text-slate-300">
+                                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-semibold">
+                                    <tr>
+                                        <th class="p-3.5 w-16 text-center">ID SQL</th>
+                                        <th class="p-3.5 w-20 text-center">Item N°</th>
+                                        <th class="p-3.5">${tableInfo.col1Label}</th>
+                                        <th class="p-3.5">${tableInfo.col2Label}</th>
+                                        <th class="p-3.5 w-28 text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-${tableKey}" class="divide-y divide-slate-800/60 font-sans">
+                                    ${renderTableRows(tableKey)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(section);
+            });
+
+            lucide.createIcons();
+            updateBadges();
+        }
+
+        function renderTableRows(tableKey, filterText = "") {
+            const tableInfo = db[tableKey];
+            let rowsHtml = '';
+
+            const filteredData = tableInfo.data.filter(item => {
+                const searchStr = `${item.numero_item} ${item.col1} ${item.col2}`.toLowerCase();
+                return searchStr.includes(filterText.toLowerCase());
+            });
+
+            if (filteredData.length === 0) {
+                return `<tr><td colspan="5" class="p-6 text-center text-slate-500 italic">No se encontraron registros en esta tabla.</td></tr>`;
+            }
+
+            filteredData.forEach(row => {
+                rowsHtml += `
+                    <tr class="hover:bg-slate-800/40 transition group">
+                        <td class="p-3.5 text-center font-mono text-slate-500">${row.id}</td>
+                        <td class="p-3.5 text-center font-mono font-bold text-brand-400 bg-slate-900/30">${row.numero_item}</td>
+                        <td class="p-3.5 font-medium text-white">${escapeHtml(row.col1)}</td>
+                        <td class="p-3.5 text-slate-300 leading-relaxed">${escapeHtml(row.col2)}</td>
+                        <td class="p-3.5 text-center">
+                            <div class="flex items-center justify-center gap-1.5 opacity-80 group-hover:opacity-100">
+                                <button onclick="openCrudModal('${tableKey}', ${row.id})" class="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-800 rounded transition" title="Editar">
+                                    <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteRecord('${tableKey}', ${row.id})" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition" title="Eliminar">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            return rowsHtml;
+        }
+
+        function filterTable(tableKey, query) {
+            const tbody = document.getElementById(`tbody-${tableKey}`);
+            if (tbody) {
+                tbody.innerHTML = renderTableRows(tableKey, query);
+                lucide.createIcons();
+            }
+        }
+
+        function updateBadges() {
+            Object.keys(db).forEach(key => {
+                const badge = document.getElementById(`badge-${key}`);
+                if (badge) {
+                    badge.innerText = db[key].data.length;
+                }
+            });
+        }
+
+        // ==========================================
+        // GESTIÓN MODAL Y CRUD
+        // ==========================================
+        function openCrudModal(tableKey, recordId = null) {
+            const tableInfo = db[tableKey];
+            document.getElementById('formTableKey').value = tableKey;
+            document.getElementById('labelCol1').innerText = tableInfo.col1Label;
+            document.getElementById('labelCol2').innerText = tableInfo.col2Label;
+
+            if (recordId) {
+                const record = tableInfo.data.find(r => r.id === recordId);
+                document.getElementById('modalTitle').innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-brand-400"></i> Editar Registro en ${tableInfo.tableNameSQL}`;
+                document.getElementById('formRecordId').value = record.id;
+                document.getElementById('formNumeroItem').value = record.numero_item;
+                document.getElementById('formCol1').value = record.col1;
+                document.getElementById('formCol2').value = record.col2;
+            } else {
+                document.getElementById('modalTitle').innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-emerald-400"></i> Nuevo Registro en ${tableInfo.tableNameSQL}`;
+                document.getElementById('formRecordId').value = '';
+                const maxItem = tableInfo.data.reduce((max, i) => i.numero_item > max ? i.numero_item : max, 0);
+                document.getElementById('formNumeroItem').value = maxItem + 1;
+                document.getElementById('formCol1').value = '';
+                document.getElementById('formCol2').value = '';
+            }
+
+            document.getElementById('crudModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeCrudModal() {
+            document.getElementById('crudModal').classList.add('hidden');
+        }
+
+        function saveRecord(e) {
+            e.preventDefault();
+            const tableKey = document.getElementById('formTableKey').value;
+            const recordId = document.getElementById('formRecordId').value;
+            const numeroItem = parseInt(document.getElementById('formNumeroItem').value);
+            const col1 = document.getElementById('formCol1').value;
+            const col2 = document.getElementById('formCol2').value;
+
+            const tableData = db[tableKey].data;
+
+            if (recordId) {
+                // Editar existente
+                const index = tableData.findIndex(r => r.id == recordId);
+                if (index !== -1) {
+                    tableData[index].numero_item = numeroItem;
+                    tableData[index].col1 = col1;
+                    tableData[index].col2 = col2;
+                }
+                showToast("Registro Actualizado", `Item N° ${numeroItem} modificado con éxito.`, "check-circle", "emerald");
+            } else {
+                // Crear nuevo
+                const newId = tableData.reduce((max, r) => r.id > max ? r.id : max, 0) + 1;
+                tableData.push({
+                    id: newId,
+                    numero_item: numeroItem,
+                    col1: col1,
+                    col2: col2
+                });
+                showToast("Registro Creado", `Nuevo Item N° ${numeroItem} agregado a la BD.`, "plus-circle", "emerald");
+            }
+
+            saveDBToLocalStorage();
+            filterTable(tableKey, "");
+            closeCrudModal();
+        }
+
+        function deleteRecord(tableKey, recordId) {
+            if (confirm("¿Está seguro de eliminar este registro de la base de datos SQL?")) {
+                db[tableKey].data = db[tableKey].data.filter(r => r.id !== recordId);
+                saveDBToLocalStorage();
+                filterTable(tableKey, "");
+                showToast("Registro Eliminado", "El elemento ha sido removido de la tabla.", "trash-2", "rose");
+            }
+        }
+
+        // ==========================================
+        // GENERACIÓN DINÁMICA DE SCRIPT SQL
+        // ==========================================
+        function generateSQLCode() {
+            let sql = `-- ========================================================\n`;
+            sql += `-- BASE DE DATOS METROLÓGICA ISO/IEC 17025\n`;
+            sql += `-- BD: db_metrologia_iso17025 | Motor: InnoDB (utf8mb4)\n`;
+            sql += `-- Generado dinámicamente desde Interfaz Web\n`;
+            sql += `-- ========================================================\n\n`;
+
+            sql += `SET FOREIGN_KEY_CHECKS = 0;\n`;
+            sql += `DROP DATABASE IF EXISTS db_metrologia_iso17025;\n`;
+            sql += `SET FOREIGN_KEY_CHECKS = 1;\n\n`;
+
+            sql += `CREATE DATABASE IF NOT EXISTS db_metrologia_iso17025\n`;
+            sql += `CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n`;
+            sql += `USE db_metrologia_iso17025;\n\n`;
+
+            Object.keys(db).forEach(key => {
+                const t = db[key];
+                sql += `-- --------------------------------------------------------\n`;
+                sql += `-- Estructura de la Tabla: ${t.tableNameSQL}\n`;
+                sql += `-- --------------------------------------------------------\n`;
+                sql += `CREATE TABLE IF NOT EXISTS \`${t.tableNameSQL}\` (\n`;
+                sql += `  \`id\` INT(11) NOT NULL AUTO_INCREMENT,\n`;
+                sql += `  \`numero_item\` INT(11) NOT NULL,\n`;
+                sql += `  \`${t.col1Name}\` VARCHAR(100) NOT NULL,\n`;
+                sql += `  \`${t.col2Name}\` TEXT NOT NULL,\n`;
+                sql += `  PRIMARY KEY (\`id\`)\n`;
+                sql += `) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n\n`;
+
+                if (t.data.length > 0) {
+                    sql += `-- Inserts de datos para ${t.tableNameSQL}\n`;
+                    sql += `INSERT INTO \`${t.tableNameSQL}\` (\`numero_item\`, \`${t.col1Name}\`, \`${t.col2Name}\`) VALUES\n`;
+                    const values = t.data.map(item => {
+                        const c1 = item.col1.replace(/'/g, "''");
+                        const c2 = item.col2.replace(/'/g, "''");
+                        return `(${item.numero_item}, '${c1}', '${c2}')`;
+                    }).join(",\n");
+                    sql += values + `;\n\n`;
+                }
+            });
+
+            document.getElementById('sqlCodeViewer').innerText = sql;
+        }
+
+        function copySQLScript() {
+            const sqlText = document.getElementById('sqlCodeViewer').innerText;
+            const textarea = document.createElement('textarea');
+            textarea.value = sqlText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast("Script SQL Copiado", "El código DDL/DML se copió al portapapeles.", "copy", "amber");
+        }
+
+        function downloadSQLFile() {
+            const sqlText = document.getElementById('sqlCodeViewer').innerText;
+            const blob = new Blob([sqlText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'db_metrologia_iso17025.sql';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("Descarga Iniciada", "Archivo db_metrologia_iso17025.sql listo.", "download", "emerald");
+        }
+
+        // ==========================================
+        // SIMULACIÓN EN TIEMPO REAL & GRÁFICOS
+        // ==========================================
+        let simInterval = null;
+        let isSimulating = true;
+        let currentPressure = 1.458;
+        let currentTemp = 22.40;
+        const trendData = Array(20).fill(1.458);
+
+        function updateGauge(pressureVal) {
+            // Rango 0 a 5 bar -> Circunstancia Svg stroke-dasharray=314.15
+            const maxBar = 5.0;
+            const minBar = 0.0;
+            const normalized = Math.min(Math.max(pressureVal, minBar), maxBar) / maxBar;
+            
+            // Total circunferencia 314.15. Mantenemos arco de 220 grados ~ 220
+            const strokeOffset = 314.15 - (normalized * 220);
+            const gaugeCircle = document.getElementById('gauge-circle');
+            if (gaugeCircle) {
+                gaugeCircle.style.strokeDashoffset = strokeOffset;
+            }
+
+            document.getElementById('dash-presion').innerHTML = `${pressureVal.toFixed(3)} <span class="text-sm font-normal text-slate-400">bar</span>`;
+            document.getElementById('gauge-value-text').innerText = pressureVal.toFixed(3);
+            document.getElementById('gauge-subtext').innerText = `${pressureVal.toFixed(3)} bar`;
+
+            // Calcular mA: 4mA + (Span * 16mA / 5)
+            const maVal = 4.0 + (pressureVal * 16.0 / 5.0);
+            document.getElementById('dash-ma').innerHTML = `${maVal.toFixed(3)} <span class="text-sm font-normal text-slate-400">mA</span>`;
+
+            // Banners de porcentaje
+            const pct = (pressureVal / 5.0) * 100;
+            document.getElementById('bar-presion').style.width = `${pct}%`;
+            document.getElementById('bar-ma').style.width = `${pct}%`;
+        }
+
+        function triggerSimulatedReading() {
+            // Variación física sutil simulando transmisor
+            const deltaP = (Math.random() - 0.5) * 0.04;
+            const deltaT = (Math.random() - 0.5) * 0.15;
+
+            currentPressure = Math.min(Math.max(currentPressure + deltaP, 1.200), 1.800);
+            currentTemp = Math.min(Math.max(currentTemp + deltaT, 21.0), 24.0);
+
+            updateGauge(currentPressure);
+
+            document.getElementById('dash-temp').innerHTML = `${currentTemp.toFixed(2)} <span class="text-sm font-normal text-slate-400">°C</span>`;
+            const tempPct = ((currentTemp + 20) / 100) * 100;
+            document.getElementById('bar-temp').style.width = `${tempPct}%`;
+
+            // Agregar a historial gráfico
+            trendData.push(currentPressure);
+            trendData.shift();
+            drawTrendChart();
+        }
+
+        function toggleSimulation() {
+            isSimulating = !isSimulating;
+            const btn = document.getElementById('toggleSimBtn');
+            if (isSimulating) {
+                btn.innerText = "Pausar Simulación";
+                btn.className = "ml-1 text-xs bg-brand-600 hover:bg-brand-500 text-white px-2 py-1 rounded transition text-nowrap";
+                simInterval = setInterval(triggerSimulatedReading, 1500);
+            } else {
+                btn.innerText = "Reanudar Simulación";
+                btn.className = "ml-1 text-xs bg-amber-600 hover:bg-amber-500 text-white px-2 py-1 rounded transition text-nowrap";
+                clearInterval(simInterval);
+            }
+        }
+
+        function drawTrendChart() {
+            const canvas = document.getElementById('trendChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // Auto-resize canvas
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Dibujar rejilla de fondo
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < w; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, h);
+                ctx.stroke();
+            }
+            for (let j = 0; j < h; j += 30) {
+                ctx.beginPath();
+                ctx.moveTo(0, j);
+                ctx.lineTo(w, j);
+                ctx.stroke();
+            }
+
+            // Mapear datos de presión a coordenadas Y (rango 1.0 a 2.0 bar)
+            const minScale = 1.0;
+            const maxScale = 2.0;
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2.5;
+
+            const stepX = w / (trendData.length - 1);
+
+            trendData.forEach((val, idx) => {
+                const normalized = (val - minScale) / (maxScale - minScale);
+                const x = idx * stepX;
+                const y = h - (normalized * h);
+
+                if (idx === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+
+            ctx.stroke();
+
+            // Gradient Fill bajo la curva
+            const gradient = ctx.createLinearGradient(0, 0, 0, h);
+            gradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+            gradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+
+        // ==========================================
+        // NAVEGACIÓN Y PESTAÑAS
+        // ==========================================
+        function switchTab(tabId) {
+            // Ocultar todos los paneles
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+
+            // Desactivar estilo botones
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-600/30', 'border', 'border-brand-500/40', 'text-brand-400', 'text-white');
+                btn.classList.add('text-slate-400');
+            });
+
+            // Mostrar el panel seleccionado
+            const activePanel = document.getElementById(`panel-${tabId}`);
+            if (activePanel) {
+                activePanel.classList.remove('hidden');
+            }
+
+            // Activar estilo botón activo
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.add('bg-brand-600/30', 'border', 'border-brand-500/40', 'text-brand-400', 'text-white');
+                activeNav.classList.remove('text-slate-400');
+            }
+
+            // Si es gráfico canvas, redibujar tras mostrarse
+            if (tabId === 'dashboard') {
+                setTimeout(drawTrendChart, 50);
+            }
+
+            // En móvil, cerrar sidebar al cambiar pestaña
+            if (window.innerWidth < 1024) {
+                toggleMobileSidebar(false);
+            }
+        }
+
+        function toggleMobileSidebar(forceState) {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            
+            const isOpen = forceState !== undefined ? forceState : sidebar.classList.contains('-translate-x-full');
+
+            if (isOpen) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        // Event listener botón menú móvil
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => toggleMobileSidebar(true));
+
+        // TOAST NOTIFICATION UTILITY
+        function showToast(title, message, iconName = "check-circle", color = "emerald") {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastTitle').innerText = title;
+            document.getElementById('toastMessage').innerText = message;
+            
+            const toastIcon = document.getElementById('toastIcon');
+            toastIcon.setAttribute('data-lucide', iconName);
+            toastIcon.className = `w-5 h-5 text-${color}-400 shrink-0 mt-0.5`;
+
+            lucide.createIcons();
+
+            toast.classList.remove('hidden', 'translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3500);
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // ==========================================
+        // INICIALIZACIÓN DEL SISTEMA
+        // ==========================================
+        window.onload = function () {
+            renderAllCrudPanels();
+            generateSQLCode();
+            updateGauge(currentPressure);
+            
+            // Iniciar simulación
+            simInterval = setInterval(triggerSimulatedReading, 1500);
+
+            // Resize listener para Canvas gráfico
+            window.addEventListener('resize', drawTrendChart);
+
+            // Iconos iniciales
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
